@@ -12,8 +12,12 @@
 
 #include <iostream>
 #include "ft_irc.hpp"
+#include "log.hpp"
+
 
 int	main(void)
 {
+	Logger::logInfo("Hi");
+
 	return (0);
 }

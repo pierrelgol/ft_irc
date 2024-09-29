@@ -13,6 +13,8 @@
 #ifndef FT_IRC_HPP
 #define FT_IRC_HPP
 
+#include "log.hpp"
+
 
 
 #endif //FT_IRC_HPP
