@@ -20,6 +20,7 @@ class Server {
       private:
 	static bool		   _sig;
 	const uuid		   _id;
+	const string		   _password;
 	i32			   _port;
 	i32			   _socket;
 	std::vector<Client>	   _clients;
@@ -27,7 +28,11 @@ class Server {
 	std::map<uuid, Client>	   _clients_index;
 
       public:
-	Server() : _id(serialize()), _port(SERVER_DEFAULT_PORT), _socket(SERVER_DEFAULT_SOCKET) {
+	Server() : _id(serialize()), _password(SERVER_DEFAULT_PASSWORD), _port(SERVER_DEFAULT_PORT), _socket(SERVER_DEFAULT_SOCKET) {
+		Logger::logDebug(format("Default constructor called --> "));
+	}
+
+	Server(i32 port, string &password) : _id(serialize()), _password(password), _port(port), _socket(SERVER_DEFAULT_SOCKET) {
 		Logger::logDebug(format("Default constructor called --> "));
 	}
 
@@ -38,13 +43,13 @@ class Server {
 
 	string format(const string &prefix, const string &suffix) {
 		std::stringstream format;
-		format << prefix << "[uuid:" << _id << ":port:" << _port << ":socket:" << _socket << ":sig:" << _sig << "]" << suffix;
+		format << prefix << "[uuid:" << _id << ":port:" << _port << ":passowrd:" << _password <<":socket:" << _socket << ":sig:" << _sig << "]" << suffix;
 		return (format.str());
 	}
 
 	string format(const string &prefix) {
 		std::stringstream format;
-		format << prefix << "[uuid:" << _id << ":port:" << _port << ":socket:" << _socket << ":sig:" << _sig << "]";
+		format << prefix << "[uuid:" << _id << ":port:" << _port << ":passowrd:" << _password <<":socket:" << _socket << ":sig:" << _sig << "]";
 		return (format.str());
 	}
 

@@ -43,6 +43,7 @@ const std::string RESET	   = "\033[0m";
 #define CLIENT_DEFAULT_FD -1
 
 #define SERVER_DEFAULT_PORT	 0
+#define SERVER_DEFAULT_PASSWORD "42"
 #define SERVER_DEFAULT_SOCKET	 -1
 #define SERVER_DEFAULT_SIGNAL	 false
 #define SERVER_DEFAULT_PROTOCOL	 0

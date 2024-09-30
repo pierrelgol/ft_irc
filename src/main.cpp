@@ -13,6 +13,7 @@
 #include "Client.hpp"
 #include "Server.hpp"
 
+#include <cstdlib>
 #include <iostream>
 
 void announce() {
@@ -31,18 +32,23 @@ void announce() {
 	std::cout << "\t\t" << IRCCOLOR << "+--------------------------------------------------+" << RESET << std::endl;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
 
-	Server ircserv;
-
+	if (argc != 3) {
+		Logger::logError("ircser : wrong numbers of arguments provided!");
+		Logger::logInfo("usage  : >$ ./ircserv <port> <password>");
+		return (1);
+	}
+	std::string password(argv[2]);
+	std::string port(argv[1]);
 	announce();
-
+	Server ircserv(std::atoi(argv[1]), password);
 	try {
 		signal(SIGINT, Server::sig_handler);
 		signal(SIGQUIT, Server::sig_handler);
 		ircserv.init();
 		ircserv.run();
-	}catch (const std::exception &e) {
+	} catch (const std::exception &e) {
 		ircserv.deinit();
 		Logger::logError(e.what());
 	}
