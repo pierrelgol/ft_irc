@@ -46,10 +46,10 @@ int main(int argc, char **argv) {
 	try {
 		signal(SIGINT, Server::sig_handler);
 		signal(SIGQUIT, Server::sig_handler);
-		ircserv.init();
-		ircserv.run();
+		ircserv.server_init();
+		ircserv.server_run();
 	} catch (const std::exception &e) {
-		ircserv.deinit();
+		ircserv.server_deinit();
 		Logger::logError(e.what());
 	}
 	Logger::logInfo("server : is closing now!");

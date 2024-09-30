@@ -22,7 +22,6 @@
 #include <fcntl.h>
 #include <iostream>
 #include <map>
-#include <map>
 #include <netinet/in.h>
 #include <poll.h>
 #include <sstream>
@@ -37,17 +36,17 @@ const std::string RESET	   = "\033[0m";
 
 #define DISCARD(x) ((void) (x))
 
-#define foreach(type, var, container) for (type::iterator var = container.begin(); var != container.end(); ++var)
 
 #define CLIENT_DEFAULT_IP "null"
 #define CLIENT_DEFAULT_FD -1
 
 #define SERVER_DEFAULT_PORT	 0
-#define SERVER_DEFAULT_PASSWORD "42"
+#define SERVER_DEFAULT_PASSWORD	 "42"
 #define SERVER_DEFAULT_SOCKET	 -1
 #define SERVER_DEFAULT_SIGNAL	 false
 #define SERVER_DEFAULT_PROTOCOL	 0
 #define SERVER_BLOCK_UNTIL_EVENT -1
+#define SERVER_MAX_CLIENTS	 1024
 #define SERVER_MAX_MSG_SIZE	 2048
 #define POLL_DEFAULT_REVENTS	 0
 

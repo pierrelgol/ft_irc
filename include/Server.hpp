@@ -43,13 +43,14 @@ class Server {
 
 	string format(const string &prefix, const string &suffix) {
 		std::stringstream format;
-		format << prefix << "[uuid:" << _id << ":port:" << _port << ":passowrd:" << _password <<":socket:" << _socket << ":sig:" << _sig << "]" << suffix;
+		format << prefix << "[uuid:" << _id << ":port:" << _port << ":passowrd:" << _password << ":socket:" << _socket << ":sig:" << _sig << "]"
+		       << suffix;
 		return (format.str());
 	}
 
 	string format(const string &prefix) {
 		std::stringstream format;
-		format << prefix << "[uuid:" << _id << ":port:" << _port << ":passowrd:" << _password <<":socket:" << _socket << ":sig:" << _sig << "]";
+		format << prefix << "[uuid:" << _id << ":port:" << _port << ":passowrd:" << _password << ":socket:" << _socket << ":sig:" << _sig << "]";
 		return (format.str());
 	}
 
@@ -87,12 +88,13 @@ class Server {
 		return (listen(_socket, SOMAXCONN) == 0);
 	}
 
-	bool socket_subscribe(struct pollfd &pollfd) {
+	bool socket_subscribe() {
 		Logger::logDebug(__PRETTY_FUNCTION__);
-		pollfd.fd      = _socket;
-		pollfd.events  = POLLIN;
-		pollfd.revents = POLL_DEFAULT_REVENTS;
-		_poll_fds.push_back(pollfd);
+		_poll_fds.push_back((struct pollfd){
+		    .fd	     = _socket,
+		    .events  = POLLIN,
+		    .revents = 0,
+		});
 		return (true);
 	}
 
@@ -126,9 +128,11 @@ class Server {
 	}
 
 	bool server_remove_client(i32 client_fd) {
-		foreach (std::vector<struct pollfd>, client, _poll_fds) {
-			if ((*client).fd == client_fd) {
-				_poll_fds.erase(client);
+		Logger::logDebug(__PRETTY_FUNCTION__);
+		for (usize i = 0; i < _poll_fds.size(); i++) {
+			struct pollfd &client = _poll_fds.at(i);
+			if (client.fd == client_fd) {
+				_poll_fds.erase(_poll_fds.begin() + i);
 			}
 		}
 
@@ -167,11 +171,12 @@ class Server {
 	}
 
 	bool server_receive_message(i32 from) {
+		Logger::logDebug(__PRETTY_FUNCTION__);
 		char buffer[SERVER_MAX_MSG_SIZE];
 		std::memset(buffer, 0x00, SERVER_MAX_MSG_SIZE);
-		isize rbytes = 0;
+		isize rbytes = recv(from, buffer, SERVER_MAX_MSG_SIZE - 1, 0);
 
-		if ((rbytes = recv(from, buffer, SERVER_MAX_MSG_SIZE, 0) <= 0)) {
+		if (rbytes <= 0) {
 			std::stringstream fmt;
 			fmt << "server : client(" << from << ") was disconnected";
 			Logger::logError(fmt.str());
@@ -192,13 +197,15 @@ class Server {
 	}
 
 	bool should_close() {
-		return Server::_sig != SERVER_DEFAULT_SIGNAL;
+		return Server::_sig == true;
 	}
 
 	Client *server_get_client_ptr_from_fd(i32 client_fd) {
-		foreach (std::vector<Client>, client, _clients) {
-			if ((*client).getFd() == client_fd) {
-				return (client.base());
+		Logger::logDebug(__PRETTY_FUNCTION__);
+		for (usize i = 0; i < _clients.size(); i++) {
+			Client &client = _clients.at(i);
+			if (client.getFd() == client_fd) {
+				_clients.erase(_clients.begin() + i);
 			}
 		}
 		return (NULL);
@@ -210,9 +217,9 @@ class Server {
 		_sig = true;
 	}
 
-	bool init() {
+	bool server_init() {
+		Logger::logDebug(__PRETTY_FUNCTION__);
 		struct sockaddr_in address;
-		struct pollfd	   pollfd;
 
 		if (socket_init(address)) {
 			Logger::logSuccess("server : socket initialisation................[OK]");
@@ -256,7 +263,7 @@ class Server {
 			return (false);
 		}
 
-		if (socket_subscribe(pollfd)) {
+		if (socket_subscribe()) {
 			Logger::logSuccess("server : socket subscribed....................[OK]");
 		} else {
 			Logger::logError("server : socket subscribed....................[KO]");
@@ -265,7 +272,7 @@ class Server {
 		return (true);
 	}
 
-	bool run() {
+	bool server_run() {
 		Logger::logDebug(format("server : "));
 		Logger::logSuccess("server : is listenning........................[OK]");
 
@@ -278,25 +285,27 @@ class Server {
 				return (false);
 			}
 
-			foreach (std::vector<struct pollfd>, file_descriptor, _poll_fds) {
-				if (server_should_handle_event(*file_descriptor)) {
-					if (server_received_a_new_connection_event((*file_descriptor).fd)) {
+			for (usize i = 0; i < _poll_fds.size(); i++) {
+				struct pollfd &curr = _poll_fds.at(i);
+				if (server_should_handle_event(curr)) {
+					if (server_received_a_new_connection_event(curr.fd)) {
 						Logger::logInfo("server : received a new connection");
 						server_handle_connection();
 					} else {
+						server_receive_message(curr.fd);
 						Logger::logInfo("server : received a new message");
-						server_receive_message((*file_descriptor).fd);
 					}
 				}
 			}
 		}
-		deinit();
+		server_deinit();
 		return (true);
 	}
 
-	bool deinit() {
-		foreach (std::vector<Client>, it, _clients) {
-			if ((*it).disconnect()) {
+	bool server_deinit() {
+		Logger::logDebug(__PRETTY_FUNCTION__);
+		for (usize i = 0; i < _clients.size(); i++) {
+			if (_clients.at(i).disconnect()) {
 				Logger::logSuccess("server : disconnected.........................[OK]");
 			}
 		}
@@ -309,6 +318,7 @@ class Server {
 	}
 
 	~Server() {
+		Logger::logDebug(__PRETTY_FUNCTION__);
 		Logger::logDebug(format("Default destructor called  --> "));
 	}
 };
