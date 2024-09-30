@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   log.hpp                                            :+:      :+:    :+:   */
+/*   Logger.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: pollivie <pollivie.student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef LOG_HPP
-#define LOG_HPP
+#ifndef LOGGER_HPP
+#define LOGGER_HPP
 
 #include <iostream>
 #include <ctime>
@@ -26,15 +26,15 @@ static const char *getLevelString(LogLevel level)
 {
 	switch (level) {
 	case DEBUG:
-		return "DEBUG";
+		return "D";
 	case INFO:
-		return "INFO";
+		return "I";
 	case SUCCESS:
-		return "SUCCESS";
+		return "S";
 	case WARN:
-		return "WARN";
+		return "W";
 	case ERROR:
-		return "ERROR";
+		return "E";
 	}
 	return "";
 }
@@ -107,6 +107,5 @@ class Logger {
 
 };
 
-const Logger log;
 
-#endif // LOG_HPP
+#endif // LOGGER_HPP
