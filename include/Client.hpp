@@ -56,7 +56,7 @@ class Client {
 		if (this != &other) {
 			this->_fd = other._fd;
 			this->_ip = other._ip;
-			this->_id = other._id;
+			this->_id = serialize(other._ip, other._fd);
 		}
 		return (*this);
 	}

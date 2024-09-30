@@ -10,13 +10,11 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#pragma once
-#include <cstring>
 #ifndef SERVER_HPP
-#	define SERVER_HPP
+#define SERVER_HPP
 
-#	include "Client.hpp"
-#	include "Common.hpp"
+#include "Client.hpp"
+#include "Common.hpp"
 
 class Server {
       private:
@@ -25,7 +23,13 @@ class Server {
 	i32			   _port;
 	i32			   _socket;
 	std::vector<Client>	   _clients;
-	std::vector<struct pollfd> _fds;
+	std::vector<struct pollfd> _poll_fds;
+	std::map<uuid, Client>	   _clients_index;
+
+      public:
+	Server() : _id(serialize()), _port(SERVER_DEFAULT_PORT), _socket(SERVER_DEFAULT_SOCKET) {
+		Logger::logDebug(format("Default constructor called --> "));
+	}
 
 	static uuid serialize() {
 		static uuid id = 0;
@@ -83,7 +87,7 @@ class Server {
 		pollfd.fd      = _socket;
 		pollfd.events  = POLLIN;
 		pollfd.revents = POLL_DEFAULT_REVENTS;
-		_fds.push_back(pollfd);
+		_poll_fds.push_back(pollfd);
 		return (true);
 	}
 
@@ -91,27 +95,6 @@ class Server {
 		Logger::logDebug(__PRETTY_FUNCTION__);
 		socklen_t size = sizeof(struct sockaddr_in);
 		return ((maybe_fd = accept(_socket, (struct sockaddr *) &address, &size)) != -1);
-	}
-
-	bool server_should_handle_event(struct pollfd &maybe_event) {
-		return (maybe_event.revents & POLLIN);
-	}
-
-	bool server_remove_client(i32 client_fd) {
-		foreach (std::vector<struct pollfd>, client, _fds) {
-			if ((*client).fd == client_fd) {
-				_fds.erase(client);
-				break;
-			}
-		}
-		foreach (std::vector<Client>, client, _clients) {
-			if ((*client).getFd() == client_fd) {
-				(*client).disconnect();
-				_clients.erase(client);
-				break;
-			}
-		}
-		return (true);
 	}
 
 	bool server_add_client(struct sockaddr_in &client_address, i32 client_fd) {
@@ -129,12 +112,31 @@ class Server {
 
 		Client new_client(inet_ntoa(client_address.sin_addr), client_fd);
 		_clients.push_back(new_client);
-		_fds.push_back(new_pollfd);
+		_poll_fds.push_back(new_pollfd);
 
 		std::stringstream fmt;
 		fmt << "server : added a new client --> " << new_client;
 		Logger::logSuccess(fmt.str());
 		return (true);
+	}
+
+	bool server_remove_client(i32 client_fd) {
+		foreach (std::vector<struct pollfd>, client, _poll_fds) {
+			if ((*client).fd == client_fd) {
+				_poll_fds.erase(client);
+			}
+		}
+
+		Client *client_ptr = server_get_client_ptr_from_fd(client_fd);
+		if (client_ptr != NULL) {
+			client_ptr->disconnect();
+		}
+
+		return (true);
+	}
+
+	bool server_should_handle_event(struct pollfd &maybe_event) {
+		return (maybe_event.revents & POLLIN);
 	}
 
 	bool server_handle_connection() {
@@ -188,15 +190,19 @@ class Server {
 		return Server::_sig != SERVER_DEFAULT_SIGNAL;
 	}
 
-      public:
+	Client *server_get_client_ptr_from_fd(i32 client_fd) {
+		foreach (std::vector<Client>, client, _clients) {
+			if ((*client).getFd() == client_fd) {
+				return (client.base());
+			}
+		}
+		return (NULL);
+	}
+
 	static void sig_handler(i32 signal) {
 		DISCARD(signal);
 		Logger::logSuccess("signal handled by server");
 		_sig = true;
-	}
-
-	Server() : _id(serialize()), _port(SERVER_DEFAULT_PORT), _socket(SERVER_DEFAULT_SOCKET) {
-		Logger::logDebug(format("Default constructor called --> "));
 	}
 
 	bool init() {
@@ -259,17 +265,15 @@ class Server {
 		Logger::logSuccess("server : is listenning........................[OK]");
 
 		while (!should_close()) {
-			struct pollfd *self	     = &_fds[0];
-			usize	       number_of_fds = _fds.size();
-			// Logger::logInfo("server : is listening for incomming connections");
-			// usleep(750000);
+			struct pollfd *self	     = &_poll_fds[0];
+			usize	       number_of_fds = _poll_fds.size();
 
 			if (poll(self, number_of_fds, SERVER_BLOCK_UNTIL_EVENT) == -1 && !should_close()) {
 				Logger::logError("server : panic poll failed!");
 				return (false);
 			}
 
-			foreach (std::vector<struct pollfd>, file_descriptor, _fds) {
+			foreach (std::vector<struct pollfd>, file_descriptor, _poll_fds) {
 				if (server_should_handle_event(*file_descriptor)) {
 					if (server_received_a_new_connection_event((*file_descriptor).fd)) {
 						Logger::logInfo("server : received a new connection");

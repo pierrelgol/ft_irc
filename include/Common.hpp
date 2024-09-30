@@ -18,8 +18,10 @@
 #include <arpa/inet.h>
 #include <cassert>
 #include <csignal>
+#include <cstring>
 #include <fcntl.h>
 #include <iostream>
+#include <map>
 #include <map>
 #include <netinet/in.h>
 #include <poll.h>
