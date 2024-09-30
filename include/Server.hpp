@@ -111,15 +111,13 @@ class Server {
 			Logger::logError("server : rejected connection to client!");
 		}
 
-		struct pollfd new_pollfd = (struct pollfd){
+		Client new_client(inet_ntoa(client_address.sin_addr), client_fd);
+		_clients.push_back(new_client);
+		_poll_fds.push_back((struct pollfd){
 		    .fd	     = client_fd,
 		    .events  = POLLIN,
 		    .revents = 0,
-		};
-
-		Client new_client(inet_ntoa(client_address.sin_addr), client_fd);
-		_clients.push_back(new_client);
-		_poll_fds.push_back(new_pollfd);
+		});
 
 		std::stringstream fmt;
 		fmt << "server : added a new client --> " << new_client;
@@ -136,9 +134,12 @@ class Server {
 			}
 		}
 
-		Client *client_ptr = server_get_client_ptr_from_fd(client_fd);
-		if (client_ptr != NULL) {
-			client_ptr->disconnect();
+		for (usize i = 0; i < _clients.size(); i++) {
+			if (_clients[i].getFd() == client_fd) {
+				_clients[i].disconnect();
+				_clients.erase(_clients.begin() + i);
+				break;
+			}
 		}
 
 		return (true);
@@ -173,21 +174,21 @@ class Server {
 	bool server_receive_message(i32 from) {
 		Logger::logDebug(__PRETTY_FUNCTION__);
 		char buffer[SERVER_MAX_MSG_SIZE];
-		std::memset(buffer, 0x00, SERVER_MAX_MSG_SIZE);
+		std::memset(buffer, '\0', SERVER_MAX_MSG_SIZE);
 		isize rbytes = recv(from, buffer, SERVER_MAX_MSG_SIZE - 1, 0);
 
+		assert(rbytes != -1);
 		if (rbytes <= 0) {
 			std::stringstream fmt;
 			fmt << "server : client(" << from << ") was disconnected";
-			Logger::logError(fmt.str());
 			server_remove_client(from);
 			return (false);
 		} else {
 			std::stringstream fmt;
-			Logger::logError(fmt.str());
 			buffer[rbytes] = '\0';
-			fmt << "server : client(" << from << ") send --> " << buffer;
-			Logger::logInfo(fmt);
+			fmt << "server : client(" << from << ") send --> " << string(buffer).c_str();
+			Logger::logInfo(fmt.str());
+			;
 		}
 		return (true);
 	}
@@ -203,10 +204,7 @@ class Server {
 	Client *server_get_client_ptr_from_fd(i32 client_fd) {
 		Logger::logDebug(__PRETTY_FUNCTION__);
 		for (usize i = 0; i < _clients.size(); i++) {
-			Client &client = _clients.at(i);
-			if (client.getFd() == client_fd) {
-				_clients.erase(_clients.begin() + i);
-			}
+			if (_clients[i].getFd() == client_fd) return (&_clients[i]);
 		}
 		return (NULL);
 	}
@@ -292,8 +290,8 @@ class Server {
 						Logger::logInfo("server : received a new connection");
 						server_handle_connection();
 					} else {
-						server_receive_message(curr.fd);
 						Logger::logInfo("server : received a new message");
+						server_receive_message(curr.fd);
 					}
 				}
 			}
