@@ -5,114 +5,74 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: pollivie <pollivie.student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/09/30 09:26:56 by pollivie          #+#    #+#             */
-/*   Updated: 2024/09/30 09:26:57 by pollivie         ###   ########.fr       */
+/*   Created: 2024/10/01 13:39:35 by pollivie          #+#    #+#             */
+/*   Updated: 2024/10/01 13:39:36 by pollivie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include "BoundedArray.hpp"
 #include "Common.hpp"
+#include "Parser.hpp"
+
+enum ClientStatus {
+	Undefined,
+	Connecting,
+	Connected,
+	Registered,
+	Operator,
+	Disconnected,
+};
 
 class Client {
       private:
-	uuid _id;
-	string	   _ip;
-	i32	   _fd;
-
-	static uuid serialize(const string &ip, i32 fd) {
-		uuid hash = 5381;
-
-		for (size_t i = 0; i < ip.length(); ++i) {
-			hash = ((hash << 5) + hash) + ip[i];
-		}
-		hash = ((hash << 5) + hash) + fd;
-		return (hash);
-	}
-
-	string format(const string &prefix, const string &suffix) {
-		std::stringstream format;
-		format << prefix << "[uuid:" << _id << ":ip:" << _ip << ":fd:" << _fd << "]" << suffix;
-		return (format.str());
-	}
-
-	string format(const string &prefix) {
-		std::stringstream format;
-		format << prefix << "[uuid:" << _id << ":ip:" << _ip << ":fd:" << _fd << "]";
-		return (format.str());
-	}
+	Optional<string>		      _nick_name;
+	Optional<string>		      _user_name;
+	Optional<string>		      _host_name;
+	Optional<string>		      _real_name;
+	Optional<string>		      _chan_name;
+	Optional<string>		      _ip;
+	Optional<i32>			      _fd;
+	ClientStatus			      _status;
+	BoundedArray<i8, IRC_MAX_MESSAGE_LEN> _buffer;
 
       public:
-	Client() : _id(serialize(CLIENT_DEFAULT_IP, CLIENT_DEFAULT_FD)), _ip(CLIENT_DEFAULT_IP), _fd(CLIENT_DEFAULT_FD) {
-		Logger::logDebug(format("Default constructor called --> "));
+	Client() : _status(Undefined) {
 	}
 
-	Client(const Client &other) : _id(other._id), _ip(other._ip), _fd(other._fd) {
-		Logger::logDebug(format("Copy constructor called --> "));
-	}
+	bool is_valid() const;
 
-	Client &operator=(const Client &other) {
-		if (this != &other) {
-			this->_fd = other._fd;
-			this->_ip = other._ip;
-			this->_id = serialize(other._ip, other._fd);
-		}
-		return (*this);
-	}
+	bool is_undefined() const;
+	bool is_connecting() const;
+	bool is_connected() const;
+	bool is_registered() const;
+	bool is_operator() const;
+	bool is_disconnected() const;
 
-	Client(string ip, i32 fd) : _id(serialize(ip, fd)), _ip(ip), _fd(fd) {
-		Logger::logDebug(format("Custom constructor called --> "));
-	}
+	Optional<string> get_nick_name() const;
+	void		 set_nick_name(const string &nick_name);
 
-	bool operator==(const Client &maybe_self) const {
-		return (this->getId() == maybe_self.getId());
-	}
+	Optional<string> get_user_name() const;
+	void		 set_user_name(const string &user_name);
 
-	bool operator!=(const Client &maybe_not_self) const {
-		return (this->getId() != maybe_not_self.getId());
-	}
+	Optional<string> get_host_name() const;
+	void		 set_host_name(const string &host_name);
 
-	i32 getFd() const {
-		return (this->_fd);
-	}
+	Optional<string> get_real_name() const;
+	void		 set_real_name(const string &real_name);
 
-	string getIp() const {
-		return (this->_ip);
-	}
+	Optional<string> get_chan_name() const;
+	void		 set_chan_name(const string &chan_name);
 
-	uuid getId() const {
-		return (this->_id);
-	}
+	Optional<string> get_ip() const;
+	void		 set_ip(const string &ip);
 
-	void setFd(i32 fd) {
-		this->_fd = fd;
-	}
+	ClientStatus get_status() const;
+	void	     set_status(ClientStatus status);
 
-	void setIp(string ip) {
-		this->_ip = ip;
-	}
-
-	bool disconnect() {
-		if (this->getFd() == CLIENT_DEFAULT_FD) {
-			Logger::logWarn(format("client is already disconnected"));
-			return (false);
-		} else {
-			close(this->_fd);
-			this->setFd(CLIENT_DEFAULT_FD);
-			return (true);
-		}
-	}
-
-	~Client() {
-		Logger::logDebug(format("Default destructor called --> "));
-	}
-
-	friend std::ostream &operator<<(std::ostream &ostream, const Client &self);
+	BoundedArray<i8, IRC_MAX_MESSAGE_LEN> const &get_buffer() const;
 };
 
-std::ostream &operator<<(std::ostream &osteam, const Client &self) {
-	osteam << "Client [ID: " << self.getId() << ", IP: " << self.getIp() << ", FD: " << self.getFd() << "]";
-	return (osteam);
-}
-#endif // CLIENT_HPP
+#endif
