@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./ircserv 6667 very_safe_42
+./ircserv 6665 very_safe_42
