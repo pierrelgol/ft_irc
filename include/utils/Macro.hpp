@@ -1,22 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
+/*   Macro.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: pollivie <pollivie.student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/09/30 09:26:49 by pollivie          #+#    #+#             */
-/*   Updated: 2024/09/30 09:26:49 by pollivie         ###   ########.fr       */
+/*   Created: 2024/10/03 10:55:24 by pollivie          #+#    #+#             */
+/*   Updated: 2024/10/03 10:55:24 by pollivie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef SERVER_HPP
-#define SERVER_HPP
+#ifndef MACRO_HPP
+#define MACRO_HPP
 
-#include "Common.hpp"
+#define DISCARD(x) (void)(x)
 
-class Server {
-	
-};
-
-#endif // SERVER_HPP
+#endif
