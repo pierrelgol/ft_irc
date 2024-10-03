@@ -1,22 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Server.hpp                                         :+:      :+:    :+:   */
+/*   IRCServer.hpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: pollivie <pollivie.student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/09/30 09:26:49 by pollivie          #+#    #+#             */
-/*   Updated: 2024/09/30 09:26:49 by pollivie         ###   ########.fr       */
+/*   Created: 2024/10/03 11:00:35 by pollivie          #+#    #+#             */
+/*   Updated: 2024/10/03 11:00:36 by pollivie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef SERVER_HPP
-#define SERVER_HPP
+#ifndef IRCSERVER_HPP
+#define IRCSERVER_HPP
 
-#include "Common.hpp"
+#include "server/Server.hpp"
 
-class Server {
-	
-};
-
-#endif // SERVER_HPP
+#endif //IRCSERVER_HPP
