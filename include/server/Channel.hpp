@@ -23,6 +23,18 @@ class Channel {
       private:
         string _name;
 
+        const string format(const string &prefix) {
+                std::stringstream fmt;
+                fmt << prefix << *this;
+                return (fmt.str());
+        }
+
+        const string format(const string &prefix, const string &suffix) {
+                std::stringstream fmt;
+                fmt << prefix << *this << suffix;
+                return (fmt.str());
+        }
+
       public:
         Channel() : _name("") {
         }
@@ -52,6 +64,13 @@ class Channel {
         void setName(const string &name) {
                 this->_name = name;
         }
+        friend std::ostream &operator<<(std::ostream &ostream, const Channel &self);
 };
+
+
+std::ostream &operator<<(std::ostream &osteam, const Channel &self) {
+        osteam << "Channel : [name:" << self._name << "]";
+        return (osteam);
+}
 
 #endif // CHANNEL_HPP

@@ -24,11 +24,26 @@ class Client {
         string _ip;
         i32    _fd;
 
-      public:
-        Client() : _ip(0), _fd(-1) {
+        const string format(const string &prefix) {
+                std::stringstream fmt;
+                fmt << prefix << *this;
+                return (fmt.str());
         }
 
-        Client(const Client &other) : _ip(other._ip), _fd(other._fd) {
+        const string format(const string &prefix, const string &suffix) {
+                std::stringstream fmt;
+                fmt << prefix << *this << suffix;
+                return (fmt.str());
+        }
+
+      public:
+        Client() : _ip(0), _fd(-1) {
+                Logger::logDebug(format("Default constructor called for --> "));
+        }
+
+        Client(const Client &other) {
+                *this = other;
+                Logger::logDebug(format("Copy constructor called for --> "));
         }
 
         Client &operator=(const Client &other) {
@@ -36,13 +51,16 @@ class Client {
                         this->_fd = other._fd;
                         this->_ip = other._ip;
                 }
+                Logger::logDebug(format("Assignment constructor called for --> "));
                 return (*this);
         }
 
         Client(const string &ip, i32 fd) : _ip(ip), _fd(fd) {
+                Logger::logDebug(format("Custom constructor called for --> "));
         }
 
         ~Client() {
+                Logger::logDebug(format("Default destructor called for --> "));
         }
 
         i32 getFd() const {
@@ -65,7 +83,7 @@ class Client {
 };
 
 std::ostream &operator<<(std::ostream &osteam, const Client &self) {
-        osteam << "Client [IP: " << self.getIp() << ", FD: " << self.getFd() << "]";
+        osteam << "Client [ip:" << self.getIp() << "|fd:" << self.getFd() << "]";
         return (osteam);
 }
 
