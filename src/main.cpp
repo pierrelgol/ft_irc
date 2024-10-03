@@ -27,13 +27,12 @@ int main(int argc, char **argv) {
         Server      ircserv(std::atoi(argv[1]), password);
 
         try {
-                // signal(SIGINT, Server::sig_handler);
-                // signal(SIGQUIT, Server::sig_handler);
-                // ircserv.server_init();
-                // ircserv.server_run();
+                signal(SIGINT, Server::signal_handler);
+                signal(SIGQUIT, Server::signal_handler);
+                ircserv.server_init();
         } catch (const std::exception &e) {
-                // ircserv.server_deinit();
-                // Logger::logError(e.what());
+                Logger::logError(e.what());
+                ircserv.server_deinit();
         }
         Logger::logInfo("server : is closing now!");
         return (0);
