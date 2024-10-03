@@ -17,7 +17,6 @@
 #include "Channel.hpp"
 #include "Client.hpp"
 
-#include <list>
 #include <vector>
 
 typedef std::vector<Channel>::iterator             chn_itr;
@@ -240,21 +239,21 @@ class Server {
                         Logger::logError("error : while trying to process client request");
                         remove_client(client_fd);
                 } else {
-                        // it->write(buffer);
+                        it->write(buffer);
                         Logger::logInfo(buffer);
                         if (it->get_buffer().find_first_of("\r\n") == string::npos) return;
                 }
         }
 
         void remove_client(i32 client_fd) {
-                std::stringstream fmt;
-                fmt << client_fd;
-                Logger::logDebug(format("server : removes client", fmt.str()));
                 for (usize i = 0; i < _clients.size(); i++) {
                         if (_clients[i].get_fd() == client_fd) {
                                 _clients[i].disconnect_msg();
                                 close(_clients[i].get_fd());
                                 _clients.erase(_clients.begin() + i);
+                                std::stringstream fmt;
+                                fmt << client_fd;
+                                Logger::logDebug(format("server : removes client", fmt.str()));
                         }
                 }
 
