@@ -11,29 +11,32 @@
 /* ************************************************************************** */
 
 #include "Common.hpp"
-#include "IRCServer.hpp"
+#include "Server.hpp"
 
-#include <cstdlib>
+bool global_server_signal = false;
 
-int main(int argc, char **argv) {
-
+int main (int argc, char **argv) {
         if (argc != 3) {
-                Logger::logError("ircser : wrong numbers of arguments provided!");
-                Logger::logInfo("usage  : >$ ./ircserv <port> <password>");
+                log_error ("ircser : wrong numbers of arguments provided!");
+                log_info ("usage  : >$ ./ircserv <port> <password>");
                 return (1);
         }
-        std::string password(argv[2]);
-        std::string port(argv[1]);
-        Server      ircserv(std::atoi(argv[1]), password);
 
-        try {
-                signal(SIGINT, Server::signal_handler);
-                signal(SIGQUIT, Server::signal_handler);
-                ircserv.server_init();
-        } catch (const std::exception &e) {
-                Logger::logError(e.what());
-                ircserv.server_deinit();
+        Server_t    server   = (Server_t){ };
+        const i32   port     = atoi (argv[1]);
+        const char *password = argv[2];
+
+        if (!server_init (&server, port, password)) {
+                log_error ("server : initialization failed!");
+                server_deinit (&server);
+                return (1);
         }
-        Logger::logInfo("server : is closing now!");
+
+        if (!server_run (&server)) {
+                log_error ("server : runtime failure!");
+                server_deinit (&server);
+                return (1);
+        }
+
         return (0);
 }

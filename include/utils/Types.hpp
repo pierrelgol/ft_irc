@@ -13,8 +13,7 @@
 #ifndef TYPES_HPP
 #define TYPES_HPP
 
-#include <string>
-typedef bool		  u1;
+typedef bool              u1;
 typedef char              i8;
 typedef short             i16;
 typedef int               i32;
@@ -27,7 +26,6 @@ typedef unsigned long int u64;
 typedef unsigned long int usize;
 typedef float             f32;
 typedef double            f64;
-typedef std::string       string;
-typedef u8 uuid;
+typedef u8                uuid;
 
-#endif // TYPES_HPP
+#endif        // TYPES_HPP

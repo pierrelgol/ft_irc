@@ -11,8 +11,8 @@
 # **************************************************************************** #
 
 CXX = g++
-CXXFLAGS = -std=c++98 -Wall -Werror -Wextra -Og -g3 -fno-omit-frame-pointer -fsanitize=address -fsanitize=null -fsanitize=undefined
-# CXXFLAGS = -std=c++98 -Wall -Werror -Wextra -g3 -fno-omit-frame-pointer
+# CXXFLAGS = -std=c++98 -Wall -Werror -Wextra -Og -g3 -fno-omit-frame-pointer -fsanitize=address -fsanitize=null -fsanitize=undefined
+CXXFLAGS = -std=c++98 -Wall -Werror -Wextra -g3 -fno-omit-frame-pointer
 NAME = ircserv
 SRC_DIRS := $(shell find . -type d -name src)
 INC_DIRS := $(shell find . -type d -name include | sed 's/^/-I/')
