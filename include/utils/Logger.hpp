@@ -13,91 +13,98 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
 
-#include "Colors.hpp"
-
+#include <cerrno>
 #include <cstdio>
-#include <ctime>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <sys/time.h>
+#include <cstring>
 
-enum LogLevel {
-        DEBUG,
-        INFO,
-        SUCCESS,
-        WARN,
-        ERROR,
-};
+#ifndef LOGLEVEL
+#define LOGLEVEL 4
+#endif
 
-static const char *getLevelString(LogLevel level) {
-        switch (level) {
-                case DEBUG: return "D";
-                case INFO: return "I";
-                case SUCCESS: return "S";
-                case WARN: return "W";
-                case ERROR: return "E";
-        }
-        return "";
-}
+#define __FILENAME__ (strrchr (__FILE__, '/') ? strrchr (__FILE__, '/') + 1 : __FILE__)
 
-static const char *getColor(LogLevel level) {
-        switch (level) {
-                case DEBUG: return YELLOW;
-                case INFO: return WHITE;
-                case SUCCESS: return GREEN;
-                case WARN: return MAGENTA;
-                case ERROR: return RED;
-        }
-        return RESET;
-}
+#if LOGLEVEL < 3
+#define NDEBUG 1
+#endif
 
-static std::string getCurrentTime() {
-        char           buffer[32];
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        struct tm *ptm = localtime(&tv.tv_sec);
-        std::sprintf(buffer, "%02d:%02d:%02d", ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
-        return std::string(buffer);
-}
+#ifdef NDEBUG
+/* compile with all debug messages removed */
+#define log_debug(M, ...)
+#else
+#ifdef LOG_NOCOLORS
+#define log_debug(M, ...) fprintf (stderr, "DEBUG " M " at %s (%s:%d) \n", ##__VA_ARGS__, __func__, __FILE__, __LINE__)
+#else
+#define log_debug(M, ...)                                                                                              \
+        fprintf (stderr,                                                                                               \
+                 "\33[34mDEBUG\33[39m " M "  \33[90m at %s (%s:%d) \33[39m\n",                                         \
+                 ##__VA_ARGS__,                                                                                        \
+                 __func__,                                                                                             \
+                 __FILE__,                                                                                             \
+                 __LINE__)
+#endif /* NOCOLORS */
+#endif /* NDEBUG */
 
-class Logger {
-      public:
-        static void log(LogLevel level, const std::string &message) {
-                std::cout << getColor(level) << "[" << getLevelString(level) << "]" << "[" << getCurrentTime() << "] " << message << RESET << std::endl;
-        }
+/* safe readable version of errno */
+#define clean_errno( ) (errno == 0 ? "None" : strerror (errno))
 
-        template <typename T>
-        static void logDebug(const T &message) {
-                logStream(DEBUG, message);
-        }
+#ifdef LOG_NOCOLORS
+#define log_error(M, ...)                                                                                              \
+        fprintf (stderr,                                                                                               \
+                 "ERR   " M " at %s (%s:%d) errno:%s\n",                                                               \
+                 ##__VA_ARGS__,                                                                                        \
+                 __func__,                                                                                             \
+                 __FILE__,                                                                                             \
+                 __LINE__,                                                                                             \
+                 clean_errno ( ))
+#define log_warn(M, ...)                                                                                               \
+        fprintf (stderr,                                                                                               \
+                 "WARN  " M " at %s (%s:%d) errno:%s\n",                                                               \
+                 ##__VA_ARGS__,                                                                                        \
+                 __func__,                                                                                             \
+                 __FILE__,                                                                                             \
+                 __LINE__,                                                                                             \
+                 clean_errno ( ))
+#define log_info(M, ...)                                                                                               \
+        fprintf (stderr, "INFO  " M " at %s (%s:%d)\n", ##__VA_ARGS__, __func__, __FILENAME__, __LINE__)
+#else
+#define log_error(M, ...)                                                                                              \
+        fprintf (stderr,                                                                                               \
+                 "\33[31mERR\33[39m   " M "  \33[90m at %s (%s:%d) \33[94merrno: %s\33[39m\n",                         \
+                 ##__VA_ARGS__,                                                                                        \
+                 __func__,                                                                                             \
+                 __FILE__,                                                                                             \
+                 __LINE__,                                                                                             \
+                 clean_errno ( ))
+#define log_warn(M, ...)                                                                                               \
+        fprintf (stderr,                                                                                               \
+                 "\33[91mWARN\33[39m  " M "  \33[90m at %s (%s:%d) \33[94merrno: %s\33[39m\n",                         \
+                 ##__VA_ARGS__,                                                                                        \
+                 __func__,                                                                                             \
+                 __FILE__,                                                                                             \
+                 __LINE__,                                                                                             \
+                 clean_errno ( ))
+#define log_info(M, ...)                                                                                               \
+        fprintf (stderr,                                                                                               \
+                 "\33[32mINFO\33[39m  " M "  \33[90m at %s (%s:%d) \33[39m\n",                                         \
+                 ##__VA_ARGS__,                                                                                        \
+                 __func__,                                                                                             \
+                 __FILENAME__,                                                                                         \
+                 __LINE__)
+#endif /* NOCOLORS */
 
-        template <typename T>
-        static void logInfo(const T &message) {
-                logStream(INFO, message);
-        }
+#if LOGLEVEL < 4
+#undef log_info
+#define log_info(M, ...)
+#endif
 
-        template <typename T>
-        static void logSuccess(const T &message) {
-                logStream(SUCCESS, message);
-        }
+#if LOGLEVEL < 2
+#undef log_warn
+#define log_warn(M, ...)
+#endif
 
-        template <typename T>
-        static void logWarn(const T &message) {
-                logStream(WARN, message);
-        }
+#if LOGLEVEL < 1
+#undef log_error
+#define log_error(M, ...)
+#endif
 
-        template <typename T>
-        static void logError(const T &message) {
-                logStream(ERROR, message);
-        }
-
-        template <typename T>
-        static void logStream(LogLevel level, const T &message) {
-                std::ostringstream oss;
-                oss << message;
-                log(level, oss.str());
-        }
-};
-
-#endif // LOGGER_HPP
+#endif        // LOGGER_HPP

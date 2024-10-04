@@ -13,6 +13,7 @@
 #ifndef MACRO_HPP
 #define MACRO_HPP
 
-#define DISCARD(x) (void)(x)
+#define DISCARD(x) (void) (x)
+#define ArraySize(x) (sizeof (x) / sizeof (x[0]))
 
 #endif
