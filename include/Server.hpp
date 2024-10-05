@@ -29,6 +29,8 @@ typedef std::vector<Client_t>::iterator      ClientIterator_t;
 typedef std::vector<Channel_t>::iterator     ChannelIterator_t;
 typedef std::vector<struct pollfd>::iterator PollfdIterator_t;
 
+// The client struct will eventually need more stuff in it but to begin 
+// it only need a fd, hostname and a buffer to be functionning
 struct Client {
         i32   fd;
         char *ip_address;
@@ -53,17 +55,16 @@ struct Server {
         std::vector<struct pollfd> pollfds;
 };
 
-bool server_init (Server_t *const server, i32 port, const char *const password);
-bool server_deinit (Server_t *const server);
-bool server_run (Server_t *const server);
-bool server_connect_client (Server_t *const server);
-bool server_process_client (Server_t *const server, i32 client_fd);
-bool server_remove_client (Server_t *const server, i32 client_fd);
-
+bool      server_init (Server_t *const server, i32 port, const char *const password);
+bool      server_deinit (Server_t *const server);
+bool      server_run (Server_t *const server);
+bool      server_connect_client (Server_t *const server);
+bool      server_process_client (Server_t *const server, i32 client_fd);
+bool      server_remove_client (Server_t *const server, i32 client_fd);
+void      server_handle_signal (i32 signal);
+bool      server_should_close (void);
 Client_t *server_get_client (Server_t *const server, i32 client_fd);
 
-void server_handle_signal (i32 signal);
-bool server_should_close (void);
 
 #pragma once
 extern bool global_server_signal;
