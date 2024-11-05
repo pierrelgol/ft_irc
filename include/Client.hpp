@@ -1,19 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Macro.hpp                                          :+:      :+:    :+:   */
+/*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pollivie <pollivie.student.42.fr>          +#+  +:+       +#+        */
+/*   By: pollivie <plgol.perso@gmail.com>           +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/03 10:55:24 by pollivie          #+#    #+#             */
-/*   Updated: 2024/10/03 10:55:24 by pollivie         ###   ########.fr       */
+/*   Created: 2024/10/22 11:42:33 by pollivie          #+#    #+#             */
+/*   Updated: 2024/10/22 11:42:33 by pollivie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef MACRO_HPP
-#define MACRO_HPP
+#ifndef __CLIENT_HPP__
+#define __CLIENT_HPP__
 
-#define DISCARD(x) (void) (x)
-#define ArraySize(x) (sizeof (x) / sizeof (x[0]))
+#pragma once
+#include "Common.hpp"
 
-#endif
+typedef struct Client Client_t;
+
+struct Client {
+                char *nickname;
+};
+
+#endif //__CLIENT_HPP__

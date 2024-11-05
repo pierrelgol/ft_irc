@@ -3,300 +3,299 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: pollivie <pollivie.student.42.fr>          +#+  +:+       +#+        */
+/*   By: pollivie <plgol.perso@gmail.com>           +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/04 10:16:51 by pollivie          #+#    #+#             */
-/*   Updated: 2024/10/04 10:16:52 by pollivie         ###   ########.fr       */
+/*   Created: 2024/11/01 15:25:14 by pollivie          #+#    #+#             */
+/*   Updated: 2024/11/01 15:25:15 by pollivie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Server.hpp"
+#include "network/Server.hpp"
+#include "Common.hpp"
+#include <csignal>
+#include <cstdlib>
 
-bool server_init (Server_t *const server, i32 port, const char *const password) {
-        if (!server or port < 1024 or port >= 65536 or !password) {
-                return (false);
-        }
+bool sig = false;
 
-        // we setup  the signal_handler to prvent sigint/sigquit
-        // from killing our server.
-        signal (SIGINT, server_handle_signal);
-        signal (SIGQUIT, server_handle_signal);
-        log_info ("server : signal_handler setup.");
-
-        // we setup the port, config
-        memset (&server->address, 0, sizeof (struct sockaddr_in));
-        server->address.sin_family      = AF_INET;
-        server->address.sin_addr.s_addr = INADDR_ANY;
-        server->address.sin_port        = htons (port);
-        log_info ("server : port resolution done.");
-
-        // clone the password, to make it so that maybe we can change it
-        // while the server is running and free it properly, but if we
-        // don't need to change the password, we might just make it a
-        // const pointer to the argv[2]
-        server->password = strdup (password);
-        if (!server->password) {
-                return (false);
-        }
-        log_info ("server : password setup.");
-
-        // we create our socket which is an fd over the network
-        server->socket = socket (AF_INET, SOCK_STREAM, 0);
-        if (server->socket == -1) {
-                return (false);
-        }
-        log_info ("server : socket openned.");
-
-        isize error_or_value = 0;
-        isize optval         = 0;
-
-        // configure the socket with SO_REUSEADDR, because otherwise we can't reuse the same socket right away,
-        // the OS has by default a delay setup for each socket, where it will keep that socket alive (thus unacessible)
-        // after the program has released it, this SO_REUSEADDR overrides that default, such that we don't end up in a 
-        // situation where reusing the same port/socket leads to a failure.
-        error_or_value = setsockopt (server->socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof (optval));
-        if (error_or_value == -1) {
-                return (false);
-        }
-        log_info ("server : socket options setup.");
-
-        // pass our socket file descriptor to fcntl, to change it to O_NONBLOCK
-        // for non blocking I/O
-        error_or_value = fcntl (server->socket, F_SETFL, O_NONBLOCK);
-        if (error_or_value == -1) {
-                return (false);
-        }
-        log_info ("server : socket switched to O_NONBLOCK.");
-
-        // binds our socket with our local address
-        error_or_value = bind (server->socket, (const struct sockaddr *) &server->address, sizeof (struct sockaddr_in));
-        if (error_or_value == -1) {
-                return (false);
-        }
-        log_info ("server : socket binded.");
-
-        // prepare our socket to passively listen for incomming fd connections
-        error_or_value = listen (server->socket, SOMAXCONN);
-        if (error_or_value == -1) {
-                return (false);
-        }
-        log_info ("server : socket is listenning.");
-
-        // push ourselfs onto the pollfd array
-        server->pollfds.push_back ((struct pollfd){
-            .fd      = server->socket,
-            .events  = POLLIN,
-            .revents = 0,
-        });
-
-        log_info ("server : initialization is done. waiting for new connections...");
-        return (true);
+void server_signal_handler(i32 signal) {
+        sig = true;
+        log_debug("signal received" + itoa(signal));
 }
 
-bool server_deinit (Server_t *const server) {
-        log_info ("server : deinitialization begin.");
-
-        // we free the password
-        if (server->password) {
-                free (server->password);
-        }
-
-        //close the socket if it's still open
-        if (server->socket != -1) {
-                close (server->socket);
-        }
-
-        // iterate over our clients to ask them to disconnect meaning close their fd, and also free
-        // their internal buffer
-        for (ClientIterator_t it = server->clients.begin ( ); it != server->clients.end ( ); it++) {
-                client_disconnect (&(*it));
-        }
-
-        // iterate oover the pollfd structs to close any poll fds
-        for (usize i = 0; i < server->pollfds.size ( ); i++) {
-                close (server->pollfds[i].fd);
-        }
-
-        log_info ("server : deinitialization done.");
-        return (true);
+bool Server::server_should_stop() const {
+        return (sig == true);
 }
 
-bool server_run (Server_t *const server) {
-        // !(global_server_signal == true)
-        while (!server_should_close ( )) {
-                // we block until poll gives us a signal that one fd is ready to be handled
-                if (poll (&server->pollfds[0], server->pollfds.size ( ), -1) == -1 and !server_should_close ( )) {
-                        return (false);
+Server::Server(const string &port, const string &password)
+    : _socket(-1), _port(atoi(port.c_str())), _hostname("127.0.0.1"), _password(password), _pollfds(0), _channels(0),
+      _clients(), _parser(NULL) {
+        log_debug("Server constructor: Initializing server with port=" + port + " and hostname=" + _hostname);
+        _socket = create_socket();
+        _parser = new Parser(this);
+        log_debug("Server constructor: Server initialized with socket=" + itoa(_socket));
+}
+
+Server::~Server() {
+        log_debug("Server destructor: Cleaning up resources.");
+
+        delete _parser;
+        for (ClientIter it = _clients.begin(); it != _clients.end(); ++it) {
+                log_debug("Server destructor: Deleting client with fd=" + itoa(it->first));
+                delete it->second;
+        }
+}
+
+bool Server::run() {
+        log_debug("Server::run: Starting server run loop.");
+
+        _pollfds.push_back((struct pollfd){.fd = _socket, .events = POLLIN, .revents = 0});
+
+        while (sig == false) {
+                i64 pollings = poll(_pollfds.begin().base(), _pollfds.size(), -1);
+
+                if (pollings == -1 && !server_should_stop()) {
+                        log_debug("Server::run: Polling error, exiting.");
+                        throw std::runtime_error("poll failed");
                 }
 
-                // we linearly look over each fd for a revents (which is poll mechanism for signaling that one fd needs our attention)
-                for (usize i = 0; i < server->pollfds.size ( ); i += 1) {
-                        // if there isn't any event for that fd we simply continue
-                        if (!(server->pollfds[i].revents & POLLIN))
-                                continue;
+                if (pollings > 0) {
+                        log_debug("Server::run: Polling returned " + itoa(pollings));
+                        for (PollfdIter it = _pollfds.begin(); it != _pollfds.end(); ++it) {
 
-                        // if there is on our own fd we will try to connect the new client
-                        if (server->pollfds[i].fd == server->socket) {
-                                log_info ("server : received a new connection request.");
-                                if (server_connect_client (server)) {
-                                        log_info ("server : successfully connected the new client.");
-                                } else {
-                                        log_error ("server : failed to connect the new client.");
+                                log_debug("Server::run: Handling events for fd=" + itoa(it->fd));
+                                ServerEvent event = identify_event(*it);
+                                log_debug("Server::run: Identified event: " + itoa(event));
+
+                                switch (event) {
+                                        case PollNothing :    continue;
+                                        case PollConnection : handle_client_connection(); break;
+                                        case PollInput :      handle_client_message(it->fd); break;
+                                        case PollHangUp :     handle_client_disconnection(it->fd); break;
+                                        default :             break;
                                 }
-                        } else {
-                                log_info ("server : received a new process request.");
-                                // if not we may have received something from a client
-                                if (server_process_client (server, server->pollfds[i].fd)) {
-                                        log_info ("server : successfully processed the client request.");
-                                } else {
-                                        log_error ("server : failed to process the client request.");
+
+                                if (event == PollConnection || event == PollHangUp) {
+                                        break;
                                 }
                         }
                 }
         }
-        // when the server is done working it can safely cleanup
-        server_deinit (server);
-        return (true);
+        log_debug("Server::run: Server stopped.");
+        return true;
 }
 
-bool server_connect_client (Server_t *const server) {
-        struct sockaddr_in new_client_address = (struct sockaddr_in){ };
-        Client_t           new_client         = (Client_t){ };
-        socklen_t          addr_len           = sizeof (struct sockaddr_in);
-        isize              error_or_value     = 0;
+void Server::handle_client_connection() {
+        log_debug("Server::handle_client_connection: Attempting to accept new client.");
 
-        // this functions await connections on the current socket, and maps the clients address to the struct sockaddr_in
-        // if it succeed it returns the client fd
-        error_or_value = accept (server->socket, (struct sockaddr *) &new_client_address, &addr_len);
-        if (error_or_value == -1) {
-                return (false);
+        sockaddr_in addr = {};
+        socklen_t   len  = sizeof(addr);
+        i32         fd   = 0;
+
+        memset(&addr, 0, len);
+
+        fd = accept(_socket, (sockaddr *)&addr, &len);
+        if (fd == -1) {
+                throw std::runtime_error("server failed to accept new client.");
         }
 
-        new_client.fd  = error_or_value;
-        // once again we configure our client's fd to be nonblocking I/O mode with O_NONBLOCK
-        error_or_value = fcntl (new_client.fd, F_SETFL, O_NONBLOCK);
-        if (error_or_value == -1) {
-                return (false);
+        log_debug("Server::handle_client_connection: New client accepted with fd=" + itoa(fd));
+        if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) {
+                close(fd);
+                throw std::runtime_error("server failed to configure new client.");
         }
 
-        // we push back our client's fd onto our pollfd array to be monitored for
-        // future events
-        server->pollfds.push_back ((struct pollfd){
-            .fd      = new_client.fd,
+        char hostname[NI_MAXHOST] = {};
+        memset(hostname, 0, arraysize(hostname));
+
+        if (getnameinfo((sockaddr *)&addr, len, hostname, NI_MAXHOST, NULL, 0, NI_NUMERICSERV) == -1) {
+                log_debug("Server::handle_client_connection: Failed to resolve client hostname.");
+                throw std::runtime_error("server failed to resolve client's hostname");
+        }
+
+        Client *new_client = new Client(fd, ntohs(addr.sin_port), hostname);
+        _clients.insert(std::make_pair(fd, new_client));
+        _pollfds.push_back((struct pollfd){
+            .fd      = fd,
             .events  = POLLIN,
             .revents = 0,
-        });
 
-        // we then create a new client struct, which will contain our client's fd
-        // it's hostname (inet_ntoa), and it's internal buffer from which we will 
-        // parse commands and receive messages
-        server->clients.push_back ((Client_t){
-            .fd         = new_client.fd,
-            .ip_address = inet_ntoa (new_client_address.sin_addr),
-            .buffer     = NULL,
         });
-
-        return (true);
+        new_client->set_is_connected(true);
+        new_client->set_is_restricted(true);
+        log_debug(
+            "Server::handle_client_connection: Client " + std::string(hostname) + " connected with fd=" + itoa(fd)
+        );
 }
 
-// iterates over our client's list and returns a pointer to it if the
-// client's fd is found NULL otherwise
-Client_t *server_get_client (Server_t *const server, i32 client_fd) {
-        ClientIterator_t it  = server->clients.begin ( );
-        ClientIterator_t end = server->clients.end ( );
+void Server::handle_client_disconnection(i32 client_fd) {
+        log_debug("Server::handle_client_disconnection: Disconnecting client fd=" + itoa(client_fd));
 
-        for (; it != end; it++) {
-                if ((*it).fd == client_fd) {
-                        return &(*it);
+        try {
+                Client *client = _clients.at(client_fd);
+                if (not client) {
+                        throw std::runtime_error("client doesn't exist.");
+                } else {
+                        client->disconnect();
+                        log_debug("Server::handle_client_disconnection: Client disconnected successfully.");
+                }
+
+                _clients.erase(client_fd);
+
+                for (PollfdIter it = _pollfds.begin(); it != _pollfds.end(); it++) {
+                        if (it->fd == client_fd) {
+                                _pollfds.erase(it);
+                                close(client_fd);
+                                delete client;
+                                log_debug("Server::handle_client_disconnection: Client cleanup completed.");
+                                break;
+                        }
+                }
+
+        } catch (std::exception &e) {
+                eprintln(e.what());
+        }
+}
+
+void Server::handle_client_message(i32 client_fd) {
+        log_debug("Server::handle_client_message: Reading message from client fd=" + itoa(client_fd));
+
+        try {
+                Client *client = _clients.at(client_fd);
+                if (client) {
+                        string client_message = read_all(client_fd);
+                        log_debug("Server::handle_client_message: Received message: " + client_message);
+                        _parser->parse(client, client_message);
+                }
+        } catch (const std::exception &e) {
+                eprintln("Exception: " + std::string(e.what()));
+        }
+}
+
+string Server::read_all(i32 client_fd) {
+        log_debug("");
+
+        char   recv_buffer[509 + 2 + 1] = {};
+        string clients_message          = string("");
+
+        do {
+                memset(recv_buffer, 0, arraysize(recv_buffer));
+                if (recv(client_fd, recv_buffer, arraysize(recv_buffer) - 3, 0) == -1 and (errno != EWOULDBLOCK)) {
+                        throw std::runtime_error("server failed to read client's message.");
+                }
+                clients_message.append(recv_buffer);
+        } while (clients_message.find("\n", 0) == string::npos);
+
+        return (clients_message);
+}
+
+Channel *Server::create_channel(const string &name, const string &key, Client *root) {
+        log_debug("");
+
+
+        todo("check unique");
+
+        Channel *new_channel = new Channel(name, key, root);
+        if (not new_channel) {
+                throw std::bad_alloc();
+        }
+        _channels.push_back(new_channel);
+        return (new_channel);
+}
+
+i32 Server::create_socket() {
+        log_debug("");
+
+        sockaddr_in server_addr = {};
+        memset(&server_addr, 0x0, sizeof(sockaddr_in));
+
+        server_addr.sin_family      = AF_INET;
+        server_addr.sin_addr.s_addr = INADDR_ANY;
+        server_addr.sin_port        = htons(_port);
+
+        i32 fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd == -1) {
+                throw std::runtime_error("server failed to acquire socket.");
+        }
+
+        i32 optval = 1;
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &optval, sizeof(optval)) == -1) {
+                throw std::runtime_error("server failed to configure socket options.");
+        }
+
+        if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) {
+                throw std::runtime_error("server failed to configure socket options.");
+        }
+
+        if (bind(fd, (sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+                throw std::runtime_error("server failed to bind socket.");
+        }
+
+        if (listen(fd, SOMAXCONN) == -1) {
+                throw std::runtime_error("server failed to listen through socket.");
+        }
+
+        return (fd);
+}
+
+// Getter for the server password (constant reference for efficiency)
+const safe string &Server::get_password() const {
+        log_debug("");
+
+        return (_password);
+}
+
+// Retrieve a client based on their socket descriptor
+safe Client *Server::get_client(i32 client_socket) const {
+        log_debug("");
+
+
+        for (ConstClientIter it = _clients.begin(); it != _clients.end(); it++) {
+                if (it->first == client_socket) {
+                        return (it->second);
                 }
         }
         return (NULL);
 }
 
-// this function will remove a single clients from both our Client's list
-// and also our pollfd's list, properly asking the client to free it's internal
-// buffer and also closes it's own file descriptor
-bool server_remove_client (Server_t *const server, i32 client_fd) {
-        {
-                ClientIterator_t it  = server->clients.begin ( );
-                ClientIterator_t end = server->clients.end ( );
+// Retrieve a client based on their nickname
+safe Client *Server::get_client(const string &nickname) const {
+        log_debug("");
 
-                for (; it != end; it++) {
-                        if ((*it).fd == client_fd) {
-                                client_clear_internal_buffer (&(*it));
-                                close ((*it).fd);
-                                server->clients.erase (it);
-                                break;
-                        }
+        for (ConstClientIter it = _clients.begin(); it != _clients.end(); it++) {
+                if (nickname.compare(it->second->get_nickname()) == 0) {
+                        return (it->second);
                 }
-                if (it == end)
-                        return (false);
         }
-
-        {
-                PollfdIterator_t it  = server->pollfds.begin ( );
-                PollfdIterator_t end = server->pollfds.end ( );
-
-                for (; it != end; it++) {
-                        if ((*it).fd == client_fd) {
-                                server->pollfds.erase (it);
-                        }
-                }
-                if (it == end)
-                        return (false);
-        }
-
-        return (true);
+        return (NULL);
 }
 
-bool server_process_client (Server_t *const server, i32 client_fd) {
-        // when a client requires our attention, we create a large enough buffer
-        // to communicate, the IRC RFC allows the client to send a maximum of 
-        // 512 bytes of data, but we allow for more, just for safety
-        char      buffer[1024];
-        Client_t *client = server_get_client (server, client_fd);
+safe Channel *Server::get_channel(const string &channel_name) const {
+        log_debug("");
 
-        if (!client) {
-                return (false);
+        for (ConstChannelIter it = _channels.begin(); it != _channels.end(); it++) {
+                if (channel_name.compare((*it)->get_name()) == 0) {
+                        return (*it);
+                }
+        }
+        return (NULL);
+}
+
+safe ServerEvent Server::identify_event(pollfd client) {
+        log_debug("");
+
+        if (client.revents & POLLERR) {
+                return PollNothing; // Handle error events if necessary
+        }
+
+        if (client.revents == 0) {
+                return PollNothing;
+        } else if (client.revents & POLLIN && client.fd == _socket) {
+                return PollConnection;
+        } else if (client.revents & POLLHUP) {
+                return PollHangUp;
+        } else if (client.revents & POLLIN) {
+                return PollInput;
         } else {
-                // ArraySize(x) --> (sizeof (buffer) / sizeof (buffer[0])
-                memset (buffer, 0, ArraySize (buffer));
+                return PollNothing;
         }
-
-        // we call recv, with our client's fd, pass it a buffer, and a maximum number of bytes
-        // to read, it returns -1 on error, or the number of bytes that were sent by the user
-        isize rbytes = recv (client->fd, buffer, ArraySize (buffer) - 1, 0);
-
-        // if ther number of bytes is incorrect we remove the client
-        // from our pool of clients
-        if (rbytes <= 0) {
-                server_remove_client (server, client_fd);
-                return (false);
-        } else {
-
-                // if not we can join our client's buffer, with it's new message
-                if (client_append_to_internal_buffer (client, buffer)) {
-
-                        // this is where we will plug the parsing of commands
-                        log_info ("%s", client_get_internal_buffer (client));
-                }
-
-                const char *const client_buffer = client_get_internal_buffer (client);
-                if (strstr (client_buffer, "\r\n") == (client_buffer + std::string::npos)) {
-                        return (true);
-                }else {
-                        client_clear_internal_buffer(client);
-                }
-        }
-        return (true);
-}
-
-void server_handle_signal (i32 signal) {
-        DISCARD (signal);
-        log_debug ("server : handled signal!");
-        global_server_signal = true;
-}
-
-bool server_should_close (void) {
-        return (global_server_signal == true);
 }
