@@ -13,84 +13,82 @@
 # Compiler and flags (fixed as requested)
 CXX = clang++
 
-CXXFLAGS = -std=c++98 -Os -mtune=native
-          #  -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG  \
-          #  -ftrapv                                                \
-          #  -funwind-tables                                        \
-          #  -g3                                                    \
-          #  -gcolumn-info                                          \
-          #  -gembed-source                                         \
-          #  -gfull                                                 \
-          #  -ggnu-pubnames                                         \
-          #  -glldb                                                 \
-          #  -gno-inline-line-tables                                \
-          #  -gsplit-dwarf                                          \
-          #  -mno-omit-leaf-frame-pointer                           \
-          #  -gused                                                 \
-          #  -gsimple-template-names                                \
-          #  -fdebug-macro                                          \
-          #  -fdebug-pass-arguments                                 \
-          #  -fdebug-pass-structure                                 \
-          #  -fdwarf-exceptions                                     \
-          #  -femit-dwarf-unwind=always                             \
-          #  -fno-eliminate-unused-debug-types                      \
-          #  -fno-omit-frame-pointer                                \
-          #  -fno-optimize-sibling-calls                            \
-          #  -fdiagnostics-absolute-paths                           \
-          #  -fdiagnostics-show-note-include-stack                  \
-          #  -fdiagnostics-show-template-tree                       \
-          #  -femit-all-decls                                       \
-          #  -fforce-dwarf-frame                                    \
-          #  -fshow-column                                          \
-          # -fsanitize-memory-param-retval                         \
-          #  -fsanitize-memory-track-origins=2                      \
-          #  -fshow-source-location                                 \
-          #  -fspell-checking                                       \
-          #  -fstandalone-debug                                     \
-          #  -fstack-protector-all                                  \
-          #  -fstack-clash-protection                               \
-          #  -fno-inline-functions                                  \
-          #  -MMD                                                   \
-          #  -MP                                                    \
-          #  -Wall                                                  \
-          #  -Wextra                                                \
-          #  -Wthread-safety                                        \
-          #  -Wunsafe-buffer-usage                                  \
-          #  -Wuninitialized                                        \
-          #  -Wdouble-promotion                                     \
-          #  -Wnull-dereference                                     \
-          #  -ftemplate-backtrace-limit=2 \
-          #  -fsanitize=alignment                                   \
-          #  -fsanitize=bool                                        \
-          #  -fsanitize=bounds                                      \
-          #  -fsanitize=builtin                                     \
-          #  -fsanitize=enum                                        \
-          #  -fsanitize=float-cast-overflow                         \
-          #  -fsanitize=float-divide-by-zero                        \
-          #  -fsanitize=function                                    \
-          #  -fsanitize=implicit-integer-sign-change                \
-          #  -fsanitize=implicit-signed-integer-truncation          \
-          #  -fsanitize=implicit-unsigned-integer-truncation        \
-          #  -fsanitize=integer                                     \
-          #  -fsanitize=local-bounds                                \
-          #  -fsanitize=nonnull-attribute                           \
-          #  -fsanitize=null                                        \
-          #  -fsanitize=nullability-arg                             \
-          #  -fsanitize=nullability-assign                          \
-          #  -fsanitize=nullability-return                          \
-          #  -fsanitize=pointer-overflow                            \
-          #  -fsanitize-recover=all                                 \
-          #  -fsanitize=return                                      \
-          #  -fsanitize=returns-nonnull-attribute                   \
-          #  -fsanitize=shift                                       \
-          #  -fsanitize=signed-integer-overflow                     \
-          #  -fsanitize=memory                                      \
-          #  -fsanitize=undefined                                   \
-          #  -fsanitize=unreachable                                 \
-          #  -fsanitize=unsigned-shift-base                         \
-          #  -fsanitize=vla-bound                                   \
-          #  -fsafe-buffer-usage-suggestions                        \
-          #  -fsanitize-trap=all                                    \
+CXXFLAGS = -std=c++98                                             \
+           -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG  \
+           -ftrapv                                                \
+           -funwind-tables                                        \
+           -g3                                                    \
+           -gcolumn-info                                          \
+           -gembed-source                                         \
+           -gfull                                                 \
+           -ggnu-pubnames                                         \
+           -glldb                                                 \
+           -gno-inline-line-tables                                \
+           -gsplit-dwarf                                          \
+           -mno-omit-leaf-frame-pointer                           \
+           -gused                                                 \
+           -gsimple-template-names                                \
+           -fdebug-macro                                          \
+           -fdebug-pass-arguments                                 \
+           -fdebug-pass-structure                                 \
+           -fdwarf-exceptions                                     \
+           -femit-dwarf-unwind=always                             \
+           -fno-eliminate-unused-debug-types                      \
+           -fno-omit-frame-pointer                                \
+           -fno-optimize-sibling-calls                            \
+           -fdiagnostics-absolute-paths                           \
+           -fdiagnostics-show-note-include-stack                  \
+           -fdiagnostics-show-template-tree                       \
+           -femit-all-decls                                       \
+           -fforce-dwarf-frame                                    \
+           -fshow-column                                          \
+           -fshow-source-location                                 \
+           -fspell-checking                                       \
+           -fstandalone-debug                                     \
+           -fstack-protector-all                                  \
+           -fstack-clash-protection                               \
+           -fno-inline-functions                                  \
+           -MMD                                                   \
+           -MP                                                    \
+           -Wall                                                  \
+           -Wextra                                                \
+           -Wthread-safety                                        \
+           -Wunsafe-buffer-usage                                  \
+           -Wuninitialized                                        \
+           -Wdouble-promotion                                     \
+           -Wnull-dereference                                     \
+           -ftemplate-backtrace-limit=2 \
+           -fsanitize=alignment                                   \
+           -fsanitize=bool                                        \
+           -fsanitize=bounds                                      \
+           -fsanitize=builtin                                     \
+           -fsanitize=enum                                        \
+           -fsanitize=float-cast-overflow                         \
+           -fsanitize=float-divide-by-zero                        \
+           -fsanitize=function                                    \
+           -fsanitize=implicit-integer-sign-change                \
+           -fsanitize=implicit-signed-integer-truncation          \
+           -fsanitize=implicit-unsigned-integer-truncation        \
+           -fsanitize=integer                                     \
+           -fsanitize=local-bounds                                \
+           -fsanitize=nonnull-attribute                           \
+           -fsanitize=null                                        \
+           -fsanitize=nullability-arg                             \
+           -fsanitize=nullability-assign                          \
+           -fsanitize=nullability-return                          \
+           -fsanitize=pointer-overflow                            \
+           -fsanitize-recover=all                                 \
+           -fsanitize=return                                      \
+           -fsanitize=returns-nonnull-attribute                   \
+           -fsanitize=shift                                       \
+           -fsanitize=signed-integer-overflow                     \
+           -fsanitize=address                                     \
+           -fsanitize=undefined                                   \
+           -fsanitize=unreachable                                 \
+           -fsanitize=unsigned-shift-base                         \
+           -fsanitize=vla-bound                                   \
+           -fsafe-buffer-usage-suggestions                        \
+           -fsanitize-trap=all                                    \
 
 
 # Project settings

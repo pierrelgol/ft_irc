@@ -35,10 +35,10 @@ class Server;
 #include "command/Parser.hpp"
 
 typedef enum ServerEvent {
-        PollConnection,
+        PollNothing,
         PollHangUp,
         PollInput,
-        PollNothing,
+        PollConnection,
 } ServerEvent;
 
 class Server {

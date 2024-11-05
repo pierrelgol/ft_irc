@@ -10,32 +10,28 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-// Header guard to prevent multiple inclusions of this header file
 #ifndef __COMMAND_HPP__
 #define __COMMAND_HPP__
 
-// Forward declaration of the Command class
 class Command;
 
-// Including necessary headers
-#include "Replies.hpp"        // For server replies handling
-#include "network/Server.hpp" // For Server class definition
-#include <numeric>            // For numeric algorithms
-#include <string>             // For string class
-#include <vector>             // For vector container
+#include "Replies.hpp"
+#include "network/Server.hpp"
+#include <numeric>
+#include <string>
+#include <vector>
 
-// Base Command class declaration
 class Command {
         private:
-                Command();                              // Private default constructor to prevent instantiation
-                Command(const Command& rhs);            // Private copy constructor
-                Command& operator=(const Command& rhs); // Private copy assignment operator
+                Command();
+                Command(const Command& rhs);
+                Command& operator=(const Command& rhs);
 
         protected:
                 Server* _server; // Pointer to the server instance
-                bool    _perm;   // Flag indicating if permission is required for the command
+                bool    _perm;   // Authentication requirement flag
 
-                // Protected constructor, can only be called by derived classes
+                // Protected constructor prevents direct instantiation of Command
                 Command(Server* server, bool perm = true) : _server(server), _perm(perm) {
                 }
 
@@ -44,175 +40,160 @@ class Command {
                 virtual ~Command() {
                 }
 
-                // Method to check if the command requires authentication
+                // Returns true if authentication is required to execute this command
                 bool perm_required() const {
-                        return (_perm); // Returns the permission requirement flag
+                        return (_perm);
                 }
 
-                // Pure virtual function to execute the command
-                virtual void execute(Client* client, const std::vector<std::string> args) = 0;
+                // Pure virtual function to execute the command, making Command an abstract class
+                virtual void execute(Client* client, const vector<string> args) = 0;
 };
 
-// Specific command classes are derived from Command
-
-// Notice command class
+// Define each specific command using the macro
 class Notice : public Command {
         private:
-                Notice();                              // Private default constructor
-                Notice(const Notice& rhs);             // Private copy constructor
-                Notice& operator=(const Command& rhs); // Private copy assignment operator
+                Notice();
+                Notice(const Notice& rhs);
+                Notice& operator=(const Command& rhs);
 
         public:
-                explicit Notice(Server* server, bool perm = true); // Constructor with server and permission flag
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Notice();                                                         // Destructor
+                explicit Notice(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Notice();
 };
 
-// PrivMsg command class
 class PrivMsg : public Command {
         private:
-                PrivMsg();                              // Private default constructor
-                PrivMsg(const PrivMsg& rhs);            // Private copy constructor
-                PrivMsg& operator=(const Command& rhs); // Private copy assignment operator
+                PrivMsg();
+                PrivMsg(const PrivMsg& rhs);
+                PrivMsg& operator=(const Command& rhs);
 
         public:
-                explicit PrivMsg(Server* server, bool perm = true);                // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~PrivMsg();                                                        // Destructor
+                explicit PrivMsg(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~PrivMsg();
 };
 
-// Part command class
 class Part : public Command {
         private:
-                Part();                              // Private default constructor
-                Part(const Part& rhs);               // Private copy constructor
-                Part& operator=(const Command& rhs); // Private copy assignment operator
+                Part();
+                Part(const Part& rhs);
+                Part& operator=(const Command& rhs);
 
         public:
-                explicit Part(Server* server, bool perm = true);                   // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Part();                                                           // Destructor
+                explicit Part(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Part();
 };
 
-// Quit command class
 class Quit : public Command {
         private:
-                Quit();                              // Private default constructor
-                Quit(const Quit& rhs);               // Private copy constructor
-                Quit& operator=(const Command& rhs); // Private copy assignment operator
+                Quit();
+                Quit(const Quit& rhs);
+                Quit& operator=(const Command& rhs);
 
         public:
-                explicit Quit(Server* server, bool perm = true);                   // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Quit();                                                           // Destructor
+                explicit Quit(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Quit();
 };
 
-// Join command class
 class Join : public Command {
         private:
-                Join();                              // Private default constructor
-                Join(const Join& rhs);               // Private copy constructor
-                Join& operator=(const Command& rhs); // Private copy assignment operator
+                Join();
+                Join(const Join& rhs);
+                Join& operator=(const Command& rhs);
 
         public:
-                explicit Join(Server* server, bool perm = true);                   // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Join();                                                           // Destructor
+                explicit Join(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Join();
 };
 
-// User command class
 class User : public Command {
         private:
-                User();                              // Private default constructor
-                User(const User& rhs);               // Private copy constructor
-                User& operator=(const Command& rhs); // Private copy assignment operator
+                User();
+                User(const User& rhs);
+                User& operator=(const Command& rhs);
 
         public:
-                User(Server* server, bool perm = true);                            // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~User();                                                           // Destructor
+                User(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~User();
 };
 
-// Nick command class
 class Nick : public Command {
         private:
-                Nick();                              // Private default constructor
-                Nick(const Nick& rhs);               // Private copy constructor
-                Nick& operator=(const Command& rhs); // Private copy assignment operator
+                Nick();
+                Nick(const Nick& rhs);
+                Nick& operator=(const Command& rhs);
 
         public:
-                Nick(Server* server, bool perm = true);                            // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Nick();                                                           // Destructor
+                Nick(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Nick();
 };
 
-// Pass command class
 class Pass : public Command {
         private:
-                Pass();                              // Private default constructor
-                Pass(const Pass& rhs);               // Private copy constructor
-                Pass& operator=(const Command& rhs); // Private copy assignment operator
+                Pass();
+                Pass(const Pass& rhs);
+                Pass& operator=(const Command& rhs);
 
         public:
-                explicit Pass(Server* server, bool perm = true);                   // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Pass();                                                           // Destructor
+                explicit Pass(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Pass();
 };
 
-// Kick command class
 class Kick : public Command {
         private:
-                Kick();                              // Private default constructor
-                Kick(const Kick& rhs);               // Private copy constructor
-                Kick& operator=(const Command& rhs); // Private copy assignment operator
+                Kick();
+                Kick(const Kick& rhs);
+                Kick& operator=(const Command& rhs);
 
         public:
-                explicit Kick(Server* server, bool perm = true);                   // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Kick();                                                           // Destructor
+                explicit Kick(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Kick();
 };
 
-// Ping command class
 class Ping : public Command {
         private:
-                Ping();                              // Private default constructor
-                Ping(const Ping& rhs);               // Private copy constructor
-                Ping& operator=(const Command& rhs); // Private copy assignment operator
+                Ping();
+                Ping(const Ping& rhs);
+                Ping& operator=(const Command& rhs);
 
         public:
-                explicit Ping(Server* server, bool perm = true);                   // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Ping();                                                           // Destructor
+                explicit Ping(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Ping();
 };
 
-// Pong command class
 class Pong : public Command {
         private:
-                Pong();                              // Private default constructor
-                Pong(const Pong& rhs);               // Private copy constructor
-                Pong& operator=(const Command& rhs); // Private copy assignment operator
+                Pong();
+                Pong(const Pong& rhs);
+                Pong& operator=(const Command& rhs);
 
         public:
-                explicit Pong(Server* server, bool perm = true);                   // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Pong();                                                           // Destructor
+                explicit Pong(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Pong();
 };
 
-// Mode command class
 class Mode : public Command {
         private:
-                Mode();                              // Private default constructor
-                Mode(const Mode& rhs);               // Private copy constructor
-                Mode& operator=(const Command& rhs); // Private copy assignment operator
+                Mode();
+                Mode(const Mode& rhs);
+                Mode& operator=(const Command& rhs);
 
         public:
-                explicit Mode(Server* server, bool perm = true);                   // Constructor
-                void execute(Client* client, const std::vector<std::string> args); // Executes the command
-                ~Mode();                                                           // Destructor
+                explicit Mode(Server* server, bool perm = true);
+                void execute(Client* client, const vector<string> args);
+                ~Mode();
 };
 
-// Undefine the DEFINE_COMMAND_CLASS macro if it's defined
 #undef DEFINE_COMMAND_CLASS
 
-// End of header guard
 #endif // __COMMAND_HPP__

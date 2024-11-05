@@ -12,6 +12,20 @@
 
 #include "command/Command.hpp"
 
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Join.cpp                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pollivie <plgol.perso@gmail.com>           +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/11/01 18:47:22 by pollivie          #+#    #+#             */
+/*   Updated: 2024/11/01 18:47:23 by pollivie         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "command/Command.hpp"
+
 Join::Join(Server* server, bool perm) : Command(server, perm) {
         _server = server;
         _perm   = perm;

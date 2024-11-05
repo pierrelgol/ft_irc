@@ -28,7 +28,7 @@ bool Server::server_should_stop() const {
 
 Server::Server(const string &port, const string &password)
     : _socket(-1), _port(atoi(port.c_str())), _hostname("127.0.0.1"), _password(password), _pollfds(0), _channels(0),
-      _clients(), _parser(NULL) {
+      _clients(), _parser() {
         log_debug("Server constructor: Initializing server with port=" + port + " and hostname=" + _hostname);
         _socket = create_socket();
         _parser = new Parser(this);
@@ -51,7 +51,7 @@ bool Server::run() {
         _pollfds.push_back((struct pollfd){.fd = _socket, .events = POLLIN, .revents = 0});
 
         while (sig == false) {
-                i64 pollings = poll(_pollfds.begin().base(), _pollfds.size(), -1);
+                i64 pollings = poll(_pollfds.begin().base(), _pollfds.size(), 0);
 
                 if (pollings == -1 && !server_should_stop()) {
                         log_debug("Server::run: Polling error, exiting.");
@@ -61,7 +61,6 @@ bool Server::run() {
                 if (pollings > 0) {
                         log_debug("Server::run: Polling returned " + itoa(pollings));
                         for (PollfdIter it = _pollfds.begin(); it != _pollfds.end(); ++it) {
-
                                 log_debug("Server::run: Handling events for fd=" + itoa(it->fd));
                                 ServerEvent event = identify_event(*it);
                                 log_debug("Server::run: Identified event: " + itoa(event));
